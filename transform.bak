@@ -1,0 +1,85 @@
+import cv2
+import numpy as np
+import sys
+import math
+#from matplotlib import pyplot as plt
+
+def nothing(*arg):
+        pass
+
+fn = '/home/vctr/Downloads/field_image.resized.jpg'
+
+SHOULDER_HEIGHT = 439
+FIELD_WIDTH = 6000
+FIELD_LENGTH = 9000
+
+img = cv2.imread(fn)
+rows,cols,ch = img.shape
+
+corners_file = file('corners.txt', 'r')
+corners = [[int(x) for x in y.split(',')] for y in corners_file.read().split('|')]
+
+#Orientation such that centre circle is on the right
+actual_corners = 
+
+cv2.namedWindow('test')
+'''
+cv2.createTrackbar('c01_x', 'test', corners[0][0], 1000, nothing)
+cv2.createTrackbar('c01_y', 'test', corners[0][1], 1000, nothing)
+cv2.createTrackbar('c11_x', 'test', corners[1][0], 1000, nothing)
+cv2.createTrackbar('c11_y', 'test', corners[1][1], 1000, nothing)
+cv2.createTrackbar('c10_x', 'test', corners[2][0], 1000, nothing)
+cv2.createTrackbar('c10_y', 'test', corners[2][1], 1000, nothing)
+cv2.createTrackbar('c00_x', 'test', corners[3][0], 1000, nothing)
+cv2.createTrackbar('c00_y', 'test', corners[3][1], 1000, nothing)
+'''
+cv2.createTrackbar('x_pad', 'test', 0, 1000, nothing)
+cv2.createTrackbar('y_pad', 'test', 0, 1000, nothing)
+cv2.createTrackbar('width', 'test', 800, 1000, nothing)
+cv2.createTrackbar('height', 'test', 300, 1000, nothing)
+
+while True:
+	'''
+	c01_x = cv2.getTrackbarPos('c01_x', 'test')
+	c01_y = cv2.getTrackbarPos('c01_y', 'test')
+	c11_x = cv2.getTrackbarPos('c11_x', 'test')
+	c11_y = cv2.getTrackbarPos('c11_y', 'test')
+	c10_x = cv2.getTrackbarPos('c10_x', 'test')
+	c10_y = cv2.getTrackbarPos('c10_y', 'test')
+	c00_x = cv2.getTrackbarPos('c00_x', 'test')
+	c00_y = cv2.getTrackbarPos('c00_y', 'test')
+	'''
+	x_pad = cv2.getTrackbarPos('x_pad', 'test')
+	y_pad = cv2.getTrackbarPos('y_pad', 'test')
+	width = cv2.getTrackbarPos('width', 'test')
+	height = cv2.getTrackbarPos('height', 'test')
+
+	#new_corners = [[c00_x, c00_y], [c01_x, c01_y], [c11_x, c11_y], [c10_x, c10_y]]
+	pts1 = np.float32(corners)
+
+	pts2 = np.float32([[0 + x_pad,0 + y_pad],\
+		[width - x_pad,0 + y_pad],[width - x_pad,height - y_pad],[0 + x_pad,height - y_pad]])
+
+	M = cv2.getPerspectiveTransform(pts1,pts2)
+
+	dst = cv2.warpPerspective(img,M,(800,300))
+	cv2.imshow('test', dst)
+	ch = cv2.waitKey(5) & 0xFF
+	if ch == 27:
+		break
+
+
+'''
+
+pts1 = np.float32(corners)
+pts2 = np.float32([[0,0],[300,0],[300,300],[0,300]])
+
+M = cv2.getPerspectiveTransform(pts1,pts2)
+
+dst = cv2.warpPerspective(img,M,(300,300))
+
+
+plt.subplot(121),plt.imshow(img),plt.title('Input')
+plt.subplot(122),plt.imshow(dst),plt.title('Output')
+plt.show()
+'''
