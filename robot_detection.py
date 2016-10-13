@@ -130,7 +130,7 @@ def main():
 			Line_end[0] += run
 			Line_end[1] += run * neg_Gradient
 
-			#cv2.line(actual_img_resize, Location, Line_end, (0, 0, 0), 5)
+			cv2.line(actual_img_resize, (Location[0], Location[1]), (Line_end[0], Line_end[1]), (0, 0, 0), 5)
 
 			print "Location: " + str(Location)
 			print "Heading: " + str(Heading)
