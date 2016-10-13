@@ -17,7 +17,7 @@ if __name__ == "__main__":
     corners_file = file('corners.txt', 'w')
     corners_string = ''
 
-    fn = '/home/vctr/Dropbox/_UNSW/Robocup/field_image_half_field.jpg'
+    fn = '/home/vctr/Dropbox/_UNSW/Robocup/vctr_field_transform/field_image_colour_cal_2.JPG'
     size = Image.open(fn).size
 
     #setting up a tkinter canvas with scrollbars
