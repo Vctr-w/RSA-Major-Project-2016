@@ -29,8 +29,8 @@ def shoulder_height_adj(corners):
 	return corners
 
 def detect_blob(frame, colour):
-	HSVLower_dict = {'blue': (92, 155, 0), 'red': (0,200,0), 'yellow': (21, 104, 103)}
-	HSVUpper_dict = {'blue': (124, 255, 255), 'red': (19,255,255), 'yellow': (33, 255, 255)}
+	HSVLower_dict = {'blue': (92, 155, 0), 'red': (0,200,0), 'yellow': (21, 104, 103), 'orange': (0, 160, 0)}
+	HSVUpper_dict = {'blue': (124, 255, 255), 'red': (19,255,255), 'yellow': (33, 255, 255), 'orange': (25, 255, 255)}
 	HSVLower = HSVLower_dict[colour]
 	HSVUpper = HSVUpper_dict[colour]
 
@@ -70,39 +70,39 @@ def detect_blob(frame, colour):
 
 	return cnts;
 
-def find_yellow_and_blue(frame, target_frame, min_radius, min_distance):
-    Colour_dict = {'blue': (255, 0, 0), 'red': (0, 0, 255), 'yellow': (0, 255, 255)}
-    bluecnts = detect_blob(frame, 'blue')
-    yellowcnts = detect_blob(frame, 'yellow')
-    if bluecnts is None or yellowcnts is None:
+def find_left_and_right(frame, target_frame, min_radius, min_distance, left, right):
+    Colour_dict = {'blue': (255, 0, 0), 'red': (0, 0, 255), 'yellow': (0, 255, 255), 'orange': (0, 130, 255)}
+    rightcnts = detect_blob(frame, right)
+    leftcnts = detect_blob(frame, left)
+    if rightcnts is None or leftcnts is None:
         return ()
-    for bc in bluecnts:
-        ((xb, yb), bradius) = cv2.minEnclosingCircle(bc)
-        if (bradius < min_radius):
+    for rc in rightcnts:
+        ((xr, yr), rradius) = cv2.minEnclosingCircle(rc)
+        if (rradius < min_radius):
             continue
-        bM = cv2.moments(bc)
-        bx = int(bM["m10"] / bM["m00"])
-        by = int(bM["m01"] / bM["m00"])
-        bcentre = (bx, by)
-        for yc in yellowcnts:
-            ((xy, yy), yradius) = cv2.minEnclosingCircle(yc)
-            if (yradius < min_radius):
+        rM = cv2.moments(rc)
+        rx = int(rM["m10"] / rM["m00"])
+        ry = int(rM["m01"] / rM["m00"])
+        rcentre = (rx, ry)
+        for lc in leftcnts:
+            ((xl, yl), lradius) = cv2.minEnclosingCircle(lc)
+            if (lradius < min_radius):
                 continue
-            yM = cv2.moments(yc)
-            yx = int(yM["m10"] / yM["m00"])
-            yy = int(yM["m01"] / yM["m00"])
-            ycentre = (yx, yy)
-            if (bx - yx)**2 + (by - yy)**2 < min_distance**2:
-                cv2.circle(target_frame, (int(xb), int(yb)), int(bradius), Colour_dict['blue'], 2)
-                cv2.circle(target_frame, (int(xy), int(yy)), int(yradius), Colour_dict['yellow'], 2)
-                cv2.circle(target_frame, bcentre, 5, Colour_dict['blue'], -1)
-                cv2.circle(target_frame, ycentre, 5, Colour_dict['yellow'], -1)
-                return (bcentre, ycentre)
+            lM = cv2.moments(lc)
+            lx = int(lM["m10"] / lM["m00"])
+            ly = int(lM["m01"] / lM["m00"])
+            lcentre = (lx, ly)
+            if (rx - lx)**2 + (ry - ly)**2 < min_distance**2:
+                cv2.circle(target_frame, (int(xr), int(yr)), int(rradius), Colour_dict[right], 2)
+                cv2.circle(target_frame, (int(xl), int(yl)), int(lradius), Colour_dict[left], 2)
+                cv2.circle(target_frame, rcentre, 5, Colour_dict[right], -1)
+                cv2.circle(target_frame, lcentre, 5, Colour_dict[left], -1)
+                return (rcentre, lcentre)
 
 
 def main():
-    # actual_fn = '/home/vctr/Dropbox/_UNSW/Robocup/vctr_field_transform/actual_field_half.png'
-    actual_fn = '/Users/Martin/Github/RSA-Major-Project-2016/actual_field_half.png'
+    actual_fn = '/home/vctr/Dropbox/_UNSW/Robocup/vctr_field_transform/actual_field_half.png'
+    #actual_fn = '/Users/Martin/Github/RSA-Major-Project-2016/actual_field_half.png'
     actual_img = cv2.imread(actual_fn)
     actual_img_resize = cv2.resize(actual_img,(FIELD_LENGTH / 2, FIELD_WIDTH), interpolation = cv2.INTER_LINEAR)
 
@@ -149,17 +149,21 @@ def main():
 
         #Blue on right shoulder
         #yellow on left shoulder
-        result = find_yellow_and_blue(dst_persp_rot, actual_img_resize, min_radius=5, min_distance=400)
+        result = find_left_and_right(dst_persp_rot, actual_img_resize, min_radius=2, min_distance=50, left='orange', right='blue')
         if result is not None:
-            (blue_centre, yellow_centre) = result
-        # blue_centre = detect_blob(dst_persp_rot, actual_img_resize, 'blue')
-        # yellow_centre = detect_blob(dst_persp_rot, actual_img_resize, 'yellow')
-        # blue_centre = detect_blob(dst_persp_rot, dst_persp_rot, 'blue')
-        # yellow_centre = detect_blob(dst_persp_rot, dst_persp_rot, 'yellow')
+            (right_centre, left_centre) = result
+        # right_centre = detect_blob(dst_persp_rot, actual_img_resize, 'right')
+        # left_centre = detect_blob(dst_persp_rot, actual_img_resize, 'left')
+        # right_centre = detect_blob(dst_persp_rot, dst_persp_rot, 'right')
+        # left_centre = detect_blob(dst_persp_rot, dst_persp_rot, 'left')
 
             try:
-                Location = [(blue_centre[0] + yellow_centre[0]) / 2, (blue_centre[1] + yellow_centre[1]) / 2]
-                neg_Gradient = (blue_centre[0] - yellow_centre[0] / (yellow_centre[1] - blue_centre[1]))
+                Location = [(right_centre[0] + left_centre[0]) / 2, (right_centre[1] + left_centre[1]) / 2]
+                
+
+
+
+                neg_Gradient = (right_centre[0] - left_centre[0] / (left_centre[1] - right_centre[1]))
                 Heading = math.atan(neg_Gradient)
 
                 Line_end = Location[:]

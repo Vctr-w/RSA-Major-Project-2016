@@ -72,14 +72,14 @@ def detect_blob(frame, target_frame, colour):
 
 
 def main():
-    # actual_fn = '/home/vctr/Dropbox/_UNSW/Robocup/vctr_field_transform/actual_field_half.png'
-    actual_fn = '/Users/Martin/Github/RSA-Major-Project-2016/actual_field_half.png'
+    actual_fn = '/home/vctr/Dropbox/_UNSW/Robocup/vctr_field_transform/actual_field_half.png'
+    #actual_fn = '/Users/Martin/Github/RSA-Major-Project-2016/actual_field_half.png'
     actual_img = cv2.imread(actual_fn)
     actual_img_resize = cv2.resize(actual_img,(FIELD_LENGTH / 2, FIELD_WIDTH), interpolation = cv2.INTER_LINEAR)
 
     # cap = cv2.VideoCapture(0)
-    # cap = cv2.VideoCapture('http://10.0.18.6:8080/videofeed?dummy=param.mjpg')
-    img = cv2.imread('/Users/Martin/Github/RSA-Major-Project-2016/field_image_colour_cal_2.JPG')
+    cap = cv2.VideoCapture('http://10.0.18.6:8080/videofeed?dummy=param.mjpg')
+    #img = cv2.imread('/Users/Martin/Github/RSA-Major-Project-2016/field_image_colour_cal_2.JPG')
 
     corners_file = file('corners.txt', 'r')
 
@@ -99,7 +99,7 @@ def main():
     cv2.namedWindow('Robot detection')
 
     while True:
-        # ret, img = cap.read()
+        ret, img = cap.read()
 
         pts1 = np.float32(corners)
 
@@ -135,7 +135,7 @@ def main():
             Line_end[0] += run
             Line_end[1] += run * neg_Gradient
 
-			cv2.line(actual_img_resize, (Location[0], Location[1]), (Line_end[0], Line_end[1]), (0, 0, 0), 5)
+            cv2.line(actual_img_resize, (Location[0], Location[1]), (Line_end[0], Line_end[1]), (0, 0, 0), 5)
 
             print "Location: " + str(Location)
             print "Heading: " + str(Heading)
