@@ -45,6 +45,12 @@ def main():
 
         cv2.circle(actual_img_resize, (values['Xpos'], values['Ypos']), 5, (255, 0, 255), -1)
 
+        length = 100
+        NAO_Line_end_x = int(values['Xpos'] + length * math.cos(values['HeadingNao']))
+        NAO_Line_end_y = int(values['Ypos'] + length * math.sin(values['HeadingNao']))
+
+        cv2.arrowedLine(actual_img_resize, (values['Xpos'], values['Ypos']), (NAO_Line_end_x, NAO_Line_end_y), (255, 0, 255), 2)
+
         LR_x = right_centre[0] - left_centre[0]
         LR_y = right_centre[1] - left_centre[1]
 
