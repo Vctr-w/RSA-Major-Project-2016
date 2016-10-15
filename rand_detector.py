@@ -7,6 +7,9 @@
 # or
 # (python) range-detector --filter HSV --webcam
 
+# usage:
+# python rand_detector.py -f hsv -i sdf
+
 import cv2
 import argparse
 from operator import xor
@@ -65,7 +68,8 @@ def main():
     range_filter = args['filter'].upper()
 
     if args['image']:
-        fn = '/home/vctr/Dropbox/_UNSW/Robocup/field_image_colour_cal.resized.JPG'
+        # fn = '/home/vctr/Dropbox/_UNSW/Robocup/field_image_colour_cal.resized.JPG'
+        fn = '/Users/Martin/Github/RSA-Major-Project-2016/field_image_colour_cal_2.JPG'
         image = cv2.imread(fn)
 
         if range_filter == 'RGB':
