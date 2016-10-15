@@ -3,6 +3,7 @@ import numpy as np
 import sys
 import math
 import pickle
+import os
 #from matplotlib import pyplot as plt
 
 FIELD_WIDTH = 6000 / 10
@@ -12,7 +13,11 @@ def nothing(*arg):
         pass
 
 def main():
-	actual_fn = '/home/vctr/Dropbox/_UNSW/Robocup/vctr_field_transform/actual_field_half.png'
+
+    if os.path.exists('/home/vctr/Dropbox/_UNSW/Robocup/vctr_field_transform/actual_field_half.png'):
+        actual_fn = '/home/vctr/Dropbox/_UNSW/Robocup/vctr_field_transform/actual_field_half.png'
+    elif os.path.exists('/home/rsa/RSA-Major-Project-2016/actual_field_half.png'):
+        actual_fn = '/home/rsa/RSA-Major-Project-2016/actual_field_half.png'
 	actual_img = cv2.imread(actual_fn)
  	actual_img_resize = cv2.resize(actual_img,(FIELD_LENGTH / 2, FIELD_WIDTH), interpolation = cv2.INTER_LINEAR)
 
@@ -64,8 +69,8 @@ def main():
 	'''
 
 
-		milliseconds | xpos | xvar | ypos | yvar | heading | headingvar | balls | rrcoord (distance heading ) | 
-			posts | rrcoord | 
+		milliseconds | xpos | xvar | ypos | yvar | heading | headingvar | balls | rrcoord (distance heading ) |
+			posts | rrcoord |
 
 		ball | rrcoord (distance heading ) | ball | rrcoord (distance heading ) |
 

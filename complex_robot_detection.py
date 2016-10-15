@@ -4,6 +4,7 @@ import sys
 import math
 import time
 import pickle
+import os
 #from matplotlib import pyplot as plt
 
 SHOULDER_HEIGHT = 439 / 10
@@ -103,8 +104,10 @@ def find_left_and_right(frame, target_frame, min_radius, min_distance, left, rig
 
 
 def main():
-    actual_fn = '/home/vctr/Dropbox/_UNSW/Robocup/vctr_field_transform/actual_field_half.png'
-    #actual_fn = '/Users/Martin/Github/RSA-Major-Project-2016/actual_field_half.png'
+    if os.path.exists('/home/vctr/Dropbox/_UNSW/Robocup/vctr_field_transform/actual_field_half.png'):
+        actual_fn = '/home/vctr/Dropbox/_UNSW/Robocup/vctr_field_transform/actual_field_half.png'
+    elif os.path.exists('/home/rsa/RSA-Major-Project-2016/actual_field_half.png'):
+        actual_fn = '/home/rsa/RSA-Major-Project-2016/actual_field_half.png'
     actual_img = cv2.imread(actual_fn)
     actual_img_resize = cv2.resize(actual_img,(FIELD_LENGTH / 2, FIELD_WIDTH), interpolation = cv2.INTER_LINEAR)
 
@@ -205,7 +208,7 @@ def main():
         ch = cv2.waitKey(5) & 0xFF
         if ch == 27:
             break
-    
+
     log_file = open('log_file.txt', 'w')
     pickle.dump(frames, log_file)
 
