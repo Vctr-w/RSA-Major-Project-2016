@@ -175,15 +175,15 @@ def main():
                 perp_y = LR_x
 
                 if perp_x > 0 and perp_y > 0:
-                    Heading = math.atan(perp_y / perp_x)
+                    Heading = math.atan(1.0 * perp_y / perp_x)
 
                 elif perp_x > 0 and perp_y < 0:
-                    Heading = math.atan(perp_y / perp_x) + 2 * math.pi
+                    Heading = math.atan(1.0 * perp_y / perp_x) + 2 * math.pi
 
                 elif perp_x < 0 and perp_y > 0:
-                    Heading = math.atan(perp_y / perp_x) + math.pi
+                    Heading = math.atan(1.0 * perp_y / perp_x) + math.pi
                 else:
-                    Heading = math.atan(perp_y / perp_x) + math.pi
+                    Heading = math.atan(1.0 * perp_y / perp_x) + math.pi
 
                 Line_end = Location[:]
                 length = 2
@@ -202,6 +202,10 @@ def main():
             except (TypeError, ZeroDivisionError) as e:
                 pass
 
+        # else:
+        #     write_dict = {'Time': time.time() * 1000.0, 'Location': None, 'Heading': None, \
+        #         'Left_centre': None, 'Right_centre': None}
+        #     frames.append(write_dict)
         cv2.imshow('Robot detection', actual_img_resize) #dst_persp_rot)
         # cv2.imshow('Robot detection', dst_persp_rot) #dst_persp_rot)
 
