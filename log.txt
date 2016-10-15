@@ -1,3 +1,5 @@
-Test 1
-Test 2
-asdfasdf
+(lp0
+I1
+aI2
+aI3
+a.

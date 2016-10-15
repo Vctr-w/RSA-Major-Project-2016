@@ -2,79 +2,72 @@ import cv2
 import numpy as np
 import sys
 import math
+import pickle
 #from matplotlib import pyplot as plt
 
 FIELD_WIDTH = 6000 / 10
 FIELD_LENGTH = 9000 / 10
 
-
-
-
-def detect_blob(frame, target_frame, colour):
-	HSVLower_dict = {'blue': (92, 155, 0), 'red': (0,200,0), 'yellow': (21, 104, 103)}
-	HSVUpper_dict = {'blue': (124, 255, 255), 'red': (19,255,255), 'yellow': (33, 255, 255)}
-	Colour_dict = {'blue': (255, 0, 0), 'red': (0, 0, 255), 'yellow': (0, 255, 255)}
-	colour_BGR = Colour_dict[colour]
-	HSVLower = HSVLower_dict[colour]
-	HSVUpper = HSVUpper_dict[colour]
-
-	hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
-	# construct a mask for the color "blue", then perform
-	# a series of dilations and erosions to remove any small
-	# blobs left in the mask
-	mask = cv2.inRange(hsv, HSVLower, HSVUpper)
-	mask = cv2.erode(mask, None, iterations=2)
-	mask = cv2.dilate(mask, None, iterations=2)
-	# find contours in the mask and initialize the current
-	# (x, y) center of the ball
-
-	cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
-		cv2.CHAIN_APPROX_SIMPLE)[-2]
-	center = None
-
-	# only proceed if at least one contour was found
-	if len(cnts) > 0:
-		# find the largest contour in the mask, then use
-		# it to compute the minimum enclosing circle and
-		# centroid
-		c = max(cnts, key=cv2.contourArea)
-		((x, y), radius) = cv2.minEnclosingCircle(c)
-		M = cv2.moments(c)
-		center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
-
-		# only proceed if the radius meets a minimum size
-		if radius > 10:
-			# draw the circle and centroid on the frame,
-			# then update the list of tracked points
-			cv2.circle(target_frame, (int(x), int(y)), int(radius),
-				colour_BGR, 2)
-			cv2.circle(target_frame, center, 5, colour_BGR, -1)
-	return center
-
+def nothing(*arg):
+        pass
 
 def main():
 	actual_fn = '/home/vctr/Dropbox/_UNSW/Robocup/vctr_field_transform/actual_field_half.png'
 	actual_img = cv2.imread(actual_fn)
  	actual_img_resize = cv2.resize(actual_img,(FIELD_LENGTH / 2, FIELD_WIDTH), interpolation = cv2.INTER_LINEAR)
 
+	log_file = open('log_file.txt', 'r')
+	lines = pickle.load(log_file)
+
 	cv2.namedWindow('Playback')
+	cv2.createTrackbar('frame', 'Playback', 0, len(lines) - 1, nothing)
 
-	lines = []
-
-	with open('log.txt') as f:
-		for line in f:
-			lines.append(line)
-
+	while True:
+		frame = cv2.getTrackbarPos('frame', 'Playback')
 
 		actual_img = cv2.imread(actual_fn)
- 		actual_img_resize = cv2.resize(actual_img,(FIELD_LENGTH / 2, FIELD_WIDTH), interpolation = cv2.INTER_LINEAR)
-		
-		print line
+		actual_img_resize = cv2.resize(actual_img,(FIELD_LENGTH / 2, FIELD_WIDTH), interpolation = cv2.INTER_LINEAR)
 
-			'''
+		values = lines[frame]
+
+		left_centre = values['Left_centre']
+		right_centre = values['Right_centre']
+
+		cv2.circle(actual_img_resize, left_centre, 5, (0, 130, 255), -1)
+		cv2.circle(actual_img_resize, right_centre, 5, (255, 0, 0), -1)
+
+		LR_x = right_centre[0] - left_centre[0]
+		LR_y = right_centre[1] - left_centre[1]
+
+		perp_x = - LR_y
+		perp_y = LR_x
+
+		Location = values['Location']
+		Line_end = Location[:]
+		length = 2
+		Line_end[0] += perp_x * length
+		Line_end[1] += perp_y * length
+
+		cv2.arrowedLine(actual_img_resize, tuple(Location), tuple(Line_end), (255, 255, 255), 2)
+
+		cv2.imshow('Playback', actual_img_resize)
+
+		#cv2.setTrackbarPos('Playback', 'frame', frame + 1)
+
+		ch = cv2.waitKey(5) & 0xFF
+		if ch == 27:
+			break
 
 
+
+
+	'''
+
+
+		milliseconds | xpos | xvar | ypos | yvar | heading | headingvar | balls | rrcoord (distance heading ) | 
+			posts | rrcoord | 
+
+		ball | rrcoord (distance heading ) | ball | rrcoord (distance heading ) |
 
 		ret, img = cap.read()
 
@@ -122,7 +115,7 @@ def main():
 		if ch == 27:
 			break
 
-			'''
+	'''
 
 if __name__ == '__main__':
 	main()

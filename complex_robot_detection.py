@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 import sys
 import math
+import time
+import pickle
 #from matplotlib import pyplot as plt
 
 SHOULDER_HEIGHT = 439 / 10
@@ -112,6 +114,8 @@ def main():
 
     corners_file = file('corners.txt', 'r')
 
+    #log_file = file('log_file.txt', 'w')
+
     #Camera view of goal posts at the far end, the corners are from far left going clockwise
     corners = [[int(x) for x in y.split(',')] for y in corners_file.read().split('|')]
 
@@ -126,6 +130,8 @@ def main():
     	[FIELD_WIDTH, FIELD_LENGTH / 2], [0, FIELD_LENGTH / 2]]
 
     cv2.namedWindow('Robot detection')
+
+    frames = []
 
     while True:
         ret, img = cap.read()
@@ -185,6 +191,11 @@ def main():
 
                 print "Location: " + str(Location)
                 print "Heading: " + str(Heading)
+
+                write_dict = {'Time': time.time() * 1000.0, 'Location': Location, 'Heading': Heading, \
+                    'Left_centre': left_centre, 'Right_centre': right_centre}
+
+                frames.append(write_dict)
             except (TypeError, ZeroDivisionError) as e:
                 pass
 
@@ -194,6 +205,9 @@ def main():
         ch = cv2.waitKey(5) & 0xFF
         if ch == 27:
             break
+    
+    log_file = open('log_file.txt', 'w')
+    pickle.dump(frames, log_file)
 
 if __name__ == '__main__':
 	main()
