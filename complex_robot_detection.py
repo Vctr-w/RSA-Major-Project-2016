@@ -149,9 +149,9 @@ def main():
 
         #Blue on right shoulder
         #yellow on left shoulder
-        result = find_left_and_right(dst_persp_rot, actual_img_resize, min_radius=2, min_distance=50, left='orange', right='blue')
+        result = find_left_and_right(dst_persp_rot, actual_img_resize, min_radius=0, min_distance=50, left='orange', right='blue')
         if result is not None:
-            (right_centre, left_centre) = result
+            (left_centre, right_centre) = result
         # right_centre = detect_blob(dst_persp_rot, actual_img_resize, 'right')
         # left_centre = detect_blob(dst_persp_rot, actual_img_resize, 'left')
         # right_centre = detect_blob(dst_persp_rot, dst_persp_rot, 'right')
@@ -159,31 +159,41 @@ def main():
 
             try:
                 Location = [(right_centre[0] + left_centre[0]) / 2, (right_centre[1] + left_centre[1]) / 2]
-                
+                LR_x = right_centre[0] - left_centre[0]
+                LR_y = right_centre[1] - left_centre[1]
 
+                perp_x = - LR_y
+                perp_y = LR_x
 
+                if perp_x > 0 and perp_y > 0:
+                    Heading = math.atan(perp_y / perp_x)
 
-                neg_Gradient = (right_centre[0] - left_centre[0] / (left_centre[1] - right_centre[1]))
-                Heading = math.atan(neg_Gradient)
+                elif perp_x > 0 and perp_y < 0:
+                    Heading = math.atan(perp_y / perp_x) + 2 * math.pi
+
+                elif perp_x < 0 and perp_y > 0:
+                    Heading = math.atan(perp_y / perp_x) + math.pi
+                else:
+                    Heading = math.atan(perp_y / perp_x) + math.pi
 
                 Line_end = Location[:]
-                run = 100
-                Line_end[0] += run
-                Line_end[1] += run * neg_Gradient
+                length = 2
+                Line_end[0] += perp_x * length
+                Line_end[1] += perp_y * length
 
-                #cv2.line(actual_img_resize, Location, Line_end, (0, 0, 0), 5)
+                cv2.arrowedLine(actual_img_resize, tuple(Location), tuple(Line_end), (255, 255, 255), 2)
 
                 print "Location: " + str(Location)
                 print "Heading: " + str(Heading)
             except (TypeError, ZeroDivisionError) as e:
                 pass
 
-            cv2.imshow('Robot detection', actual_img_resize) #dst_persp_rot)
-            # cv2.imshow('Robot detection', dst_persp_rot) #dst_persp_rot)
+        cv2.imshow('Robot detection', actual_img_resize) #dst_persp_rot)
+        # cv2.imshow('Robot detection', dst_persp_rot) #dst_persp_rot)
 
-            ch = cv2.waitKey(5) & 0xFF
-            if ch == 27:
-                break
+        ch = cv2.waitKey(5) & 0xFF
+        if ch == 27:
+            break
 
 if __name__ == '__main__':
 	main()
