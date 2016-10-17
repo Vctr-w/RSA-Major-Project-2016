@@ -20,8 +20,8 @@ def main():
         actual_fn = '/home/vctr/Dropbox/_UNSW/Robocup/vctr_field_transform/actual_field_half.png'
     elif os.path.exists('/home/rsa/RSA-Major-Project-2016/actual_field_half.png'):
         actual_fn = '/home/rsa/RSA-Major-Project-2016/actual_field_half.png'
-        actual_img = cv2.imread(actual_fn)
-        actual_img_resize = cv2.resize(actual_img,(FIELD_LENGTH / 2, FIELD_WIDTH), interpolation = cv2.INTER_LINEAR)
+    actual_img = cv2.imread(actual_fn)
+    actual_img_resize = cv2.resize(actual_img,(FIELD_LENGTH / 2, FIELD_WIDTH), interpolation = cv2.INTER_LINEAR)
 
     log_file = open(sys.argv[1], 'r')
     lines = pickle.load(log_file)
