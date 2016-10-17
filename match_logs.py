@@ -22,7 +22,7 @@ def process_line(line, time_difference):
     nao_log = {'Time': int(float(split_list[0]) - time_difference), 'Xpos': convertNX(split_list[2]), 'Xvar': float(split_list[4])/100, \
     'Ypos': convertNY(split_list[6]), 'Yvar': float(split_list[8])/100, \
     'HeadingNao': convertNHeading(split_list[10]), "HNaovar": float(split_list[12]), 'Balls': [], 'Posts': []}
-    for i in range(13, len(split_list), 2):
+    for i in range(14, len(split_list), 2):
         if split_list[i] == "":
             break
         nao_log[split_list[i]].append(split_list[i + 1])

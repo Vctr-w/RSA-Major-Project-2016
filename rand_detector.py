@@ -69,6 +69,7 @@ def main():
 
     if args['image']:
         # fn = '/home/vctr/Dropbox/_UNSW/Robocup/field_image_colour_cal.resized.JPG'
+
         fn = '/Users/Martin/Github/RSA-Major-Project-2016/field_image_colour_cal_2.JPG'
         image = cv2.imread(fn)
 
@@ -77,7 +78,8 @@ def main():
         else:
             frame_to_thresh = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     else:
-        camera = cv2.VideoCapture('http://10.0.18.6:8080/videofeed?dummy=param.mjpg')
+        # camera = cv2.VideoCapture('http://10.0.18.6:8080/videofeed?dummy=param.mjpg')
+        camera = cv2.VideoCapture('http://129.94.233.98/live?dummy=param.mjpg')
 
     setup_trackbars(range_filter)
 

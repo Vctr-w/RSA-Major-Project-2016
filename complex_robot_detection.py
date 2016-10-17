@@ -7,12 +7,30 @@ import pickle
 import os
 #from matplotlib import pyplot as plt
 
-SHOULDER_HEIGHT = 439 / 10
+BALL_HEIGHT = 90.0 / 10
+SHOULDER_HEIGHT = 439.0 / 10
 FIELD_WIDTH = 6000 / 10
 FIELD_LENGTH = 9000 / 10
 
 def nothing(*arg):
         pass
+
+def ball_height_adj(bcorners):
+    far_width = (bcorners[0][0] + bcorners[1][0]) / 2
+    near_width = (bcorners[2][0] + bcorners[3][0]) / 2
+
+    ratio = 1.0 * BALL_HEIGHT / FIELD_WIDTH
+
+    far_width_adj = ratio * far_width
+    near_width_adj = ratio * near_width
+
+    #Move them higher - Since (0, 0) is top left corner, this is subtraction
+    bcorners[0][1] -= far_width_adj
+    bcorners[1][1] -= far_width_adj
+    bcorners[2][1] -= near_width_adj
+    bcorners[3][1] -= near_width_adj
+
+    return bcorners
 
 def shoulder_height_adj(corners):
 	far_width = (corners[0][0] + corners[1][0]) / 2
@@ -32,8 +50,8 @@ def shoulder_height_adj(corners):
 	return corners
 
 def detect_blob(frame, colour):
-	HSVLower_dict = {'blue': (92, 155, 0), 'red': (0,200,0), 'yellow': (21, 104, 103), 'orange': (0, 160, 0)}
-	HSVUpper_dict = {'blue': (124, 255, 255), 'red': (19,255,255), 'yellow': (33, 255, 255), 'orange': (25, 255, 255)}
+	HSVLower_dict = {'blue': (92, 155, 0), 'red': (0,200,0), 'yellow': (24, 122, 126), 'orange': (0, 160, 150)}
+	HSVUpper_dict = {'blue': (124, 255, 255), 'red': (19,255,255), 'yellow': (38, 212, 255), 'orange': (25, 255, 255)}
 	HSVLower = HSVLower_dict[colour]
 	HSVUpper = HSVUpper_dict[colour]
 
@@ -73,8 +91,63 @@ def detect_blob(frame, colour):
 
 	return cnts;
 
-def find_left_and_right(frame, target_frame, min_radius, min_distance, left, right):
+
+def find_ball(img, target_frame, actual_corners, ball_corners, min_radius, colour):
     Colour_dict = {'blue': (255, 0, 0), 'red': (0, 0, 255), 'yellow': (0, 255, 255), 'orange': (0, 130, 255)}
+
+    pts1 = np.float32(ball_corners)
+
+    pts2 = np.float32(actual_corners)
+
+    M_perspec = cv2.getPerspectiveTransform(pts1,pts2)
+
+    dst_persp = cv2.warpPerspective(img,M_perspec,(FIELD_WIDTH, FIELD_LENGTH / 2))
+
+    M_rot = cv2.getRotationMatrix2D((FIELD_WIDTH / 2, FIELD_LENGTH / 4),90,1)
+    M_rot[0][2] += FIELD_LENGTH / 4 - FIELD_WIDTH / 2
+    M_rot[1][2] += FIELD_WIDTH / 2 - FIELD_LENGTH / 4
+
+    frame = cv2.warpAffine(dst_persp,M_rot, (FIELD_LENGTH / 2, FIELD_WIDTH) )
+
+    ballcnts = detect_blob(frame, colour)
+    maxbc = None
+    maxradius = 0
+    for bc in ballcnts:
+        ((circlex, circley), circleradius) = cv2.minEnclosingCircle(bc)
+        if circleradius > maxradius:
+            maxbc = bc
+            maxradius = circleradius
+
+    if maxbc is not None:
+        ((circlex, circley), circleradius) = cv2.minEnclosingCircle(maxbc)
+        M = cv2.moments(maxbc)
+        x = int(M["m10"] / M["m00"])
+        y = int(M["m01"] / M["m00"])
+
+        cv2.circle(target_frame, (int(circlex), int(circley)), int(circleradius), Colour_dict[colour], 2)
+        cv2.circle(target_frame, (x, y), 5, Colour_dict[colour], -1)
+
+        return (x, y)
+
+
+def find_left_and_right(img, target_frame, actual_corners, adjusted_corners, min_radius, min_distance, left, right):
+    Colour_dict = {'blue': (255, 0, 0), 'red': (0, 0, 255), 'yellow': (0, 255, 255), 'orange': (0, 130, 255)}
+
+    pts1 = np.float32(adjusted_corners)
+
+    pts2 = np.float32(actual_corners)
+
+    M_perspec = cv2.getPerspectiveTransform(pts1,pts2)
+
+    dst_persp = cv2.warpPerspective(img,M_perspec,(FIELD_WIDTH, FIELD_LENGTH / 2))
+
+    M_rot = cv2.getRotationMatrix2D((FIELD_WIDTH / 2, FIELD_LENGTH / 4),90,1)
+    M_rot[0][2] += FIELD_LENGTH / 4 - FIELD_WIDTH / 2
+    M_rot[1][2] += FIELD_WIDTH / 2 - FIELD_LENGTH / 4
+
+    frame = cv2.warpAffine(dst_persp,M_rot, (FIELD_LENGTH / 2, FIELD_WIDTH) )
+    #print dst_persp_rot.shape
+
     rightcnts = detect_blob(frame, right)
     leftcnts = detect_blob(frame, left)
     if rightcnts is None or leftcnts is None:
@@ -112,7 +185,8 @@ def main():
     actual_img_resize = cv2.resize(actual_img,(FIELD_LENGTH / 2, FIELD_WIDTH), interpolation = cv2.INTER_LINEAR)
 
     # cap = cv2.VideoCapture(0)
-    cap = cv2.VideoCapture('http://10.0.18.6:8080/videofeed?dummy=param.mjpg')
+    # cap = cv2.VideoCapture('http://10.0.18.6:8080/videofeed?dummy=param.mjpg')
+    cap = cv2.VideoCapture('http://129.94.233.98/live?dummy=param.mjpg')
     # img = cv2.imread('/Users/Martin/Github/RSA-Major-Project-2016/field_image_colour_cal_2.JPG')
 
     corners_file = file('corners.txt', 'r')
@@ -122,7 +196,15 @@ def main():
     #Camera view of goal posts at the far end, the corners are from far left going clockwise
     corners = [[int(x) for x in y.split(',')] for y in corners_file.read().split('|')]
 
-    corners = shoulder_height_adj(corners[:])
+    ball_corners = []
+    for corner_list in corners:
+        ball_corners.append(list(corner_list))
+
+    ball_corners = ball_height_adj(ball_corners)
+
+    adjusted_corners = shoulder_height_adj(corners[:])
+
+
 
     #Orientation such that centre circle is on the bottom
     #Starting from top left corner going clockwise
@@ -139,26 +221,13 @@ def main():
     while True:
         ret, img = cap.read()
 
-        pts1 = np.float32(corners)
-
-        pts2 = np.float32(actual_corners)
-
-        M_perspec = cv2.getPerspectiveTransform(pts1,pts2)
-
-        dst_persp = cv2.warpPerspective(img,M_perspec,(FIELD_WIDTH, FIELD_LENGTH / 2))
-
-        M_rot = cv2.getRotationMatrix2D((FIELD_WIDTH / 2, FIELD_LENGTH / 4),90,1)
-        M_rot[0][2] += FIELD_LENGTH / 4 - FIELD_WIDTH / 2
-        M_rot[1][2] += FIELD_WIDTH / 2 - FIELD_LENGTH / 4
-
-        dst_persp_rot = cv2.warpAffine(dst_persp,M_rot, (FIELD_LENGTH / 2, FIELD_WIDTH) )
-        #print dst_persp_rot.shape
-
         actual_img_resize = cv2.resize(actual_img,(FIELD_LENGTH / 2, FIELD_WIDTH), interpolation = cv2.INTER_CUBIC)
+
+        ball_centre = find_ball(img, actual_img_resize, actual_corners, ball_corners, min_radius = 0, colour='orange')
 
         #Blue on right shoulder
         #yellow on left shoulder
-        result = find_left_and_right(dst_persp_rot, actual_img_resize, min_radius=0, min_distance=50, left='orange', right='blue')
+        result = find_left_and_right(img, actual_img_resize, actual_corners, adjusted_corners, min_radius=0, min_distance=50, left='yellow', right='blue')
         if result is not None:
             (left_centre, right_centre) = result
         # right_centre = detect_blob(dst_persp_rot, actual_img_resize, 'right')
@@ -196,7 +265,7 @@ def main():
                 print "Heading: " + str(Heading)
 
                 write_dict = {'Time': time.time() * 1000.0, 'Location': Location, 'Heading': Heading, \
-                    'Left_centre': left_centre, 'Right_centre': right_centre}
+                    'Left_centre': left_centre, 'Right_centre': right_centre, "Ball_centre": ball_centre}
 
                 frames.append(write_dict)
             except (TypeError, ZeroDivisionError) as e:

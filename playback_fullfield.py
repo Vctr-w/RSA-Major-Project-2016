@@ -13,7 +13,7 @@ FIELD_LENGTH = 9000 / 10
 def nothing(*arg):
     pass
 
-def draw_observed(frame, left, right, location):
+def draw_observed(frame, left, right, location, ball_centre):
     # draw observed left centre and observed right centre
     cv2.circle(frame, left, 5, (0, 130, 255), -1)
     cv2.circle(frame, right, 5, (255, 0, 0), -1)
@@ -31,6 +31,8 @@ def draw_observed(frame, left, right, location):
     Line_end[1] += perp_y * length
 
     cv2.arrowedLine(frame, tuple(location), tuple(Line_end), (255, 255, 255), 2)
+
+    cv2.circle(frame, ball_centre, 5, (0, 130, 255), -1)
 
 
 def draw_nao(frame, x, y, heading):
@@ -72,23 +74,26 @@ def main():
 
         values = lines[frame]
 
-        draw_observed(frame=actual_img_resize, left=values['Left_centre'], right=values['Right_centre'], location=values['Location'])
+        draw_observed(frame=actual_img_resize, left=values['Left_centre'], right=values['Right_centre'], location=values['Location'], \
+                        ball_centre=values['Ball_centre'])
 
-        draw_nao(frame=actual_img_resize, x=values['Xpos'], y=values['Ypos'], heading=values['HeadingNao'])
+        if values.get('Xpos') is not None:
 
-        # draw nao balls from observed perspective (observed from fixed camera)
-        list_of_balls = values['Balls']
-        for i, ball in enumerate(list_of_balls):
-            [b_dist, b_heading, b_orient] = [float(val) for val in ball.split(",")]
-            draw_nao_object(frame=actual_img_resize, observed_x=values['Location'][0], observed_y=values['Location'][1], \
-                            observed_h=values['Heading'], distance=b_dist, heading=b_heading, label=i, colour='white')
+            draw_nao(frame=actual_img_resize, x=values['Xpos'], y=values['Ypos'], heading=values['HeadingNao'])
 
-        # draw nao posts from observed perspective (observed from fixed camera)
-        list_of_posts = values['Posts']
-        for i, post in enumerate(list_of_posts):
-            [p_dist, p_heading, p_orient] = [float(val) for val in post.split(",")]
-            draw_nao_object(frame=actual_img_resize, observed_x=values['Location'][0], observed_y=values['Location'][1], \
-                            observed_h=values['Heading'], distance=p_dist, heading=p_heading, label=i, colour='white')
+            # draw nao balls from observed perspective (observed from fixed camera)
+            list_of_balls = values['Balls']
+            for i, ball in enumerate(list_of_balls):
+                [b_dist, b_heading, b_orient] = [float(val) for val in ball.split(",")]
+                draw_nao_object(frame=actual_img_resize, observed_x=values['Location'][0], observed_y=values['Location'][1], \
+                                observed_h=values['Heading'], distance=b_dist, heading=b_heading, label=i, colour='white')
+
+            # draw nao posts from observed perspective (observed from fixed camera)
+            list_of_posts = values['Posts']
+            for i, post in enumerate(list_of_posts):
+                [p_dist, p_heading, p_orient] = [float(val) for val in post.split(",")]
+                draw_nao_object(frame=actual_img_resize, observed_x=values['Location'][0], observed_y=values['Location'][1], \
+                                observed_h=values['Heading'], distance=p_dist, heading=p_heading, label=i, colour='white')
 
 
         cv2.imshow('Playback', actual_img_resize)
