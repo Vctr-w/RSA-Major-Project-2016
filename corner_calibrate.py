@@ -20,7 +20,8 @@ if __name__ == "__main__":
 
     #fn = '/home/vctr/Dropbox/_UNSW/Robocup/vctr_field_transform/testphotosat1340.JPG'
     # fn = '/Users/Martin/Github/RSA-Major-Project-2016/field_image_colour_cal_2.JPG'
-    fn = './' + sys.argv[1]
+    fn = '/home/rsa/RSA-Major-Project-2016/calibrationphoto.jpg'
+    # fn = './' + sys.argv[1]
     size = Image.open(fn).size
 
     #setting up a tkinter canvas with scrollbars

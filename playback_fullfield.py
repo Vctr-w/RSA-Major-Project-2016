@@ -32,7 +32,8 @@ def draw_observed(frame, left, right, location, ball_centre):
 
     cv2.arrowedLine(frame, tuple(location), tuple(Line_end), (255, 255, 255), 2)
 
-    cv2.circle(frame, ball_centre, 5, (0, 130, 255), -1)
+    if ball_centre is not None:
+        cv2.circle(frame, ball_centre, 5, (0, 130, 255), -1)
 
 
 def draw_nao(frame, x, y, heading):
@@ -75,7 +76,7 @@ def main():
         values = lines[frame]
 
         draw_observed(frame=actual_img_resize, left=values['Left_centre'], right=values['Right_centre'], location=values['Location'], \
-                        ball_centre=values['Ball_centre'])
+                        ball_centre=values.get('Ball_centre'))
 
         if values.get('Xpos') is not None:
 

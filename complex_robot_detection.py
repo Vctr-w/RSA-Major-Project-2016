@@ -51,7 +51,7 @@ def shoulder_height_adj(corners):
 
 def detect_blob(frame, colour):
 	HSVLower_dict = {'blue': (92, 155, 0), 'red': (0,200,0), 'yellow': (24, 122, 126), 'orange': (0, 160, 150)}
-	HSVUpper_dict = {'blue': (124, 255, 255), 'red': (19,255,255), 'yellow': (38, 212, 255), 'orange': (25, 255, 255)}
+	HSVUpper_dict = {'blue': (124, 255, 255), 'red': (19,255,255), 'yellow': (38, 200, 235), 'orange': (25, 255, 255)}
 	HSVLower = HSVLower_dict[colour]
 	HSVUpper = HSVUpper_dict[colour]
 
