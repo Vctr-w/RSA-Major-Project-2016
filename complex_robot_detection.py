@@ -7,10 +7,21 @@ import pickle
 import os
 #from matplotlib import pyplot as plt
 
-BALL_HEIGHT = 90.0 / 10
+BALL_HEIGHT = 60.0 / 10
 SHOULDER_HEIGHT = 439.0 / 10
 FIELD_WIDTH = 6000 / 10
 FIELD_LENGTH = 9000 / 10
+
+if len(sys.argv) > 1:
+    if (sys.argv[1] == "-h"):
+        HALF_FIELD_ONLY = True
+else:
+    HALF_FIELD_ONLY = False
+
+if HALF_FIELD_ONLY:
+    FIELD_SIZE_DIVISOR = 2
+else:
+    FIELD_SIZE_DIVISOR = 1
 
 def nothing(*arg):
         pass
@@ -50,8 +61,8 @@ def shoulder_height_adj(corners):
 	return corners
 
 def detect_blob(frame, colour):
-	HSVLower_dict = {'blue': (92, 155, 0), 'red': (0,200,0), 'yellow': (24, 122, 126), 'orange': (0, 160, 150)}
-	HSVUpper_dict = {'blue': (124, 255, 255), 'red': (19,255,255), 'yellow': (38, 200, 235), 'orange': (25, 255, 255)}
+	HSVLower_dict = {'blue': (92, 155, 150), 'red': (0,150,150), 'yellow': (26, 40, 200), 'orange': (0, 170, 130)}
+	HSVUpper_dict = {'blue': (124, 255, 255), 'red': (4,255,255), 'yellow': (31, 255, 255), 'orange': (25, 255, 255)}
 	HSVLower = HSVLower_dict[colour]
 	HSVUpper = HSVUpper_dict[colour]
 
@@ -101,13 +112,13 @@ def find_ball(img, target_frame, actual_corners, ball_corners, min_radius, colou
 
     M_perspec = cv2.getPerspectiveTransform(pts1,pts2)
 
-    dst_persp = cv2.warpPerspective(img,M_perspec,(FIELD_WIDTH, FIELD_LENGTH / 2))
+    dst_persp = cv2.warpPerspective(img,M_perspec,(FIELD_WIDTH, FIELD_LENGTH))
 
-    M_rot = cv2.getRotationMatrix2D((FIELD_WIDTH / 2, FIELD_LENGTH / 4),90,1)
-    M_rot[0][2] += FIELD_LENGTH / 4 - FIELD_WIDTH / 2
-    M_rot[1][2] += FIELD_WIDTH / 2 - FIELD_LENGTH / 4
+    M_rot = cv2.getRotationMatrix2D((FIELD_WIDTH / 2, FIELD_LENGTH / 2 / FIELD_SIZE_DIVISOR),90,1)
+    M_rot[0][2] += FIELD_LENGTH / 2 / FIELD_SIZE_DIVISOR- FIELD_WIDTH / 2
+    M_rot[1][2] += FIELD_WIDTH / 2 - FIELD_LENGTH / 2 / FIELD_SIZE_DIVISOR
 
-    frame = cv2.warpAffine(dst_persp,M_rot, (FIELD_LENGTH / 2, FIELD_WIDTH) )
+    frame = cv2.warpAffine(dst_persp,M_rot, (FIELD_LENGTH / FIELD_SIZE_DIVISOR, FIELD_WIDTH) )
 
     ballcnts = detect_blob(frame, colour)
     maxbc = None
@@ -130,7 +141,7 @@ def find_ball(img, target_frame, actual_corners, ball_corners, min_radius, colou
         return (x, y)
 
 
-def find_left_and_right(img, target_frame, actual_corners, adjusted_corners, min_radius, min_distance, left, right):
+def find_left_and_right(img, target_frame, actual_corners, adjusted_corners, min_radius, min_distance, left, right, side):
     Colour_dict = {'blue': (255, 0, 0), 'red': (0, 0, 255), 'yellow': (0, 255, 255), 'orange': (0, 130, 255)}
 
     pts1 = np.float32(adjusted_corners)
@@ -139,50 +150,124 @@ def find_left_and_right(img, target_frame, actual_corners, adjusted_corners, min
 
     M_perspec = cv2.getPerspectiveTransform(pts1,pts2)
 
-    dst_persp = cv2.warpPerspective(img,M_perspec,(FIELD_WIDTH, FIELD_LENGTH / 2))
+    dst_persp = cv2.warpPerspective(img,M_perspec,(FIELD_WIDTH, FIELD_LENGTH / FIELD_SIZE_DIVISOR))
 
-    M_rot = cv2.getRotationMatrix2D((FIELD_WIDTH / 2, FIELD_LENGTH / 4),90,1)
-    M_rot[0][2] += FIELD_LENGTH / 4 - FIELD_WIDTH / 2
-    M_rot[1][2] += FIELD_WIDTH / 2 - FIELD_LENGTH / 4
+    M_rot = cv2.getRotationMatrix2D((FIELD_WIDTH / 2, FIELD_LENGTH / 2 / FIELD_SIZE_DIVISOR),90,1)
+    M_rot[0][2] += FIELD_LENGTH / 2 / FIELD_SIZE_DIVISOR - FIELD_WIDTH / 2
+    M_rot[1][2] += FIELD_WIDTH / 2 - FIELD_LENGTH / 2 / FIELD_SIZE_DIVISOR
 
-    frame = cv2.warpAffine(dst_persp,M_rot, (FIELD_LENGTH / 2, FIELD_WIDTH) )
+    frame = cv2.warpAffine(dst_persp,M_rot, (FIELD_LENGTH / FIELD_SIZE_DIVISOR, FIELD_WIDTH) )
     #print dst_persp_rot.shape
 
     rightcnts = detect_blob(frame, right)
     leftcnts = detect_blob(frame, left)
-    if rightcnts is None or leftcnts is None:
-        return ()
-    for rc in rightcnts:
-        ((xr, yr), rradius) = cv2.minEnclosingCircle(rc)
-        if (rradius < min_radius):
-            continue
-        rM = cv2.moments(rc)
-        rx = int(rM["m10"] / rM["m00"])
-        ry = int(rM["m01"] / rM["m00"])
-        rcentre = (rx, ry)
-        for lc in leftcnts:
-            ((xl, yl), lradius) = cv2.minEnclosingCircle(lc)
-            if (lradius < min_radius):
+
+    if rightcnts is not None and leftcnts is not None:
+        for rc in rightcnts:
+            ((xr, yr), rradius) = cv2.minEnclosingCircle(rc)
+            if (rradius < min_radius):
                 continue
-            lM = cv2.moments(lc)
-            lx = int(lM["m10"] / lM["m00"])
-            ly = int(lM["m01"] / lM["m00"])
-            lcentre = (lx, ly)
-            if (rx - lx)**2 + (ry - ly)**2 < min_distance**2:
-                cv2.circle(target_frame, (int(xr), int(yr)), int(rradius), Colour_dict[right], 2)
-                cv2.circle(target_frame, (int(xl), int(yl)), int(lradius), Colour_dict[left], 2)
-                cv2.circle(target_frame, rcentre, 5, Colour_dict[right], -1)
-                cv2.circle(target_frame, lcentre, 5, Colour_dict[left], -1)
-                return (rcentre, lcentre)
+            rM = cv2.moments(rc)
+            rx = int(rM["m10"] / rM["m00"])
+            ry = int(rM["m01"] / rM["m00"])
+            rcentre = (rx, ry)
+            for lc in leftcnts:
+                ((xl, yl), lradius) = cv2.minEnclosingCircle(lc)
+                if (lradius < min_radius):
+                    continue
+                lM = cv2.moments(lc)
+                lx = int(lM["m10"] / lM["m00"])
+                ly = int(lM["m01"] / lM["m00"])
+                lcentre = (lx, ly)
+                if (rx - lx)**2 + (ry - ly)**2 < min_distance**2:
+                    cv2.circle(target_frame, (int(xr), int(yr)), int(rradius), Colour_dict[right], 2)
+                    cv2.circle(target_frame, (int(xl), int(yl)), int(lradius), Colour_dict[left], 2)
+                    cv2.circle(target_frame, rcentre, 5, Colour_dict[right], -1)
+                    cv2.circle(target_frame, lcentre, 5, Colour_dict[left], -1)
+                    return (rcentre, lcentre)
+
+    if rightcnts is None and leftcnts is not None:
+        sidecnts = detect_blob(frame, side)
+        if sidecnts is None:
+            return None
+
+        maxbc = None
+        maxradius = 0
+        for bc in leftcnts:
+            ((circlex, circley), circleradius) = cv2.minEnclosingCircle(bc)
+            if circleradius > maxradius:
+                maxbc = bc
+                maxradius = circleradius
+
+        if maxbc is not None:
+            ((circlex, circley), circleradius) = cv2.minEnclosingCircle(maxbc)
+            M = cv2.moments(maxbc)
+            x = int(M["m10"] / M["m00"])
+            y = int(M["m01"] / M["m00"])
+
+            for sc in sidecnts:
+                ((xl, yl), sradius) = cv2.minEnclosingCircle(sc)
+                if (sradius < min_radius):
+                    continue
+                sM = cv2.moments(sc)
+                sx = int(sM["m10"] / sM["m00"])
+                sy = int(sM["m01"] / sM["m00"])
+                scentre = (sx, sy)
+                if (x - sx)**2 + (y - sy)**2 < min_distance**2:
+                    cv2.circle(target_frame, (int(circlex), int(circley)), int(circleradius), Colour_dict[colour], 2)
+                    cv2.circle(target_frame, (x, y), 5, Colour_dict[colour], -1)
+
+                    return ((x + 5, y + 5), (x, y))
+
+    if rightcnts is not None and leftcnts is None:
+        sidecnts = detect_blob(frame, side)
+        if sidecnts is None:
+            return None
+
+        maxbc = None
+        maxradius = 0
+        for bc in rightcnts:
+            ((circlex, circley), circleradius) = cv2.minEnclosingCircle(bc)
+            if circleradius > maxradius:
+                maxbc = bc
+                maxradius = circleradius
+
+        if maxbc is not None:
+            ((circlex, circley), circleradius) = cv2.minEnclosingCircle(maxbc)
+            M = cv2.moments(maxbc)
+            x = int(M["m10"] / M["m00"])
+            y = int(M["m01"] / M["m00"])
+
+            for sc in sidecnts:
+                ((xl, yl), sradius) = cv2.minEnclosingCircle(sc)
+                if (sradius < min_radius):
+                    continue
+                sM = cv2.moments(sc)
+                sx = int(sM["m10"] / sM["m00"])
+                sy = int(sM["m01"] / sM["m00"])
+                scentre = (sx, sy)
+                if (x - sx)**2 + (y - sy)**2 < min_distance**2:
+                    cv2.circle(target_frame, (int(circlex), int(circley)), int(circleradius), Colour_dict[colour], 2)
+                    cv2.circle(target_frame, (x, y), 5, Colour_dict[colour], -1)
+
+                    return ((x, y), (x + 5, y + 5))
+
 
 
 def main():
-    if os.path.exists('/home/vctr/Dropbox/_UNSW/Robocup/vctr_field_transform/actual_field_half.png'):
-        actual_fn = '/home/vctr/Dropbox/_UNSW/Robocup/vctr_field_transform/actual_field_half.png'
-    elif os.path.exists('/home/rsa/RSA-Major-Project-2016/actual_field_half.png'):
-        actual_fn = '/home/rsa/RSA-Major-Project-2016/actual_field_half.png'
+    if HALF_FIELD_ONLY:
+        if os.path.exists('/home/vctr/Dropbox/_UNSW/Robocup/vctr_field_transform/actual_field_half.png'):
+            actual_fn = '/home/vctr/Dropbox/_UNSW/Robocup/vctr_field_transform/actual_field_half.png'
+        elif os.path.exists('/home/rsa/RSA-Major-Project-2016/actual_field_half.png'):
+            actual_fn = '/home/rsa/RSA-Major-Project-2016/actual_field_half.png'
+    else:
+        if os.path.exists('/home/vctr/Dropbox/_UNSW/Robocup/vctr_field_transform/actual_full_field.png'):
+            actual_fn = '/home/vctr/Dropbox/_UNSW/Robocup/vctr_field_transform/actual_full_field.png'
+        elif os.path.exists('/home/rsa/RSA-Major-Project-2016/actual_full_field.png'):
+            actual_fn = '/home/rsa/RSA-Major-Project-2016/actual_full_field.png'
+
     actual_img = cv2.imread(actual_fn)
-    actual_img_resize = cv2.resize(actual_img,(FIELD_LENGTH / 2, FIELD_WIDTH), interpolation = cv2.INTER_LINEAR)
+    actual_img_resize = cv2.resize(actual_img,(FIELD_LENGTH / FIELD_SIZE_DIVISOR, FIELD_WIDTH), interpolation = cv2.INTER_LINEAR)
 
     # cap = cv2.VideoCapture(0)
     # cap = cv2.VideoCapture('http://10.0.18.6:8080/videofeed?dummy=param.mjpg')
@@ -221,13 +306,19 @@ def main():
     while True:
         ret, img = cap.read()
 
-        actual_img_resize = cv2.resize(actual_img,(FIELD_LENGTH / 2, FIELD_WIDTH), interpolation = cv2.INTER_CUBIC)
+        actual_img_resize = cv2.resize(actual_img,(FIELD_LENGTH / FIELD_SIZE_DIVISOR, FIELD_WIDTH), interpolation = cv2.INTER_CUBIC)
 
         ball_centre = find_ball(img, actual_img_resize, actual_corners, ball_corners, min_radius = 0, colour='orange')
 
+        Location = None
+        Heading = None
+        left_centre = None
+        right_centre = None
+
         #Blue on right shoulder
         #yellow on left shoulder
-        result = find_left_and_right(img, actual_img_resize, actual_corners, adjusted_corners, min_radius=0, min_distance=50, left='yellow', right='blue')
+        result = find_left_and_right(img, actual_img_resize, actual_corners, adjusted_corners, min_radius=0, min_distance=50, \
+        left='yellow', right='blue', side='red')
         if result is not None:
             (left_centre, right_centre) = result
         # right_centre = detect_blob(dst_persp_rot, actual_img_resize, 'right')
@@ -268,6 +359,7 @@ def main():
                     'Left_centre': left_centre, 'Right_centre': right_centre, "Ball_centre": ball_centre}
 
                 frames.append(write_dict)
+
             except (TypeError, ZeroDivisionError) as e:
                 pass
 
@@ -275,6 +367,9 @@ def main():
         #     write_dict = {'Time': time.time() * 1000.0, 'Location': None, 'Heading': None, \
         #         'Left_centre': None, 'Right_centre': None}
         #     frames.append(write_dict)
+
+
+
         cv2.imshow('Robot detection', actual_img_resize) #dst_persp_rot)
         # cv2.imshow('Robot detection', dst_persp_rot) #dst_persp_rot)
 

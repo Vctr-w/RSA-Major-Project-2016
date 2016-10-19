@@ -5,6 +5,7 @@ import math
 import pickle
 import os
 import time
+import datetime
 #from matplotlib import pyplot as plt
 
 FIELD_WIDTH = 6000 / 10
@@ -15,8 +16,8 @@ def nothing(*arg):
 
 def draw_observed(frame, left, right, location, ball_centre):
     # draw observed left centre and observed right centre
-    cv2.circle(frame, left, 5, (0, 130, 255), -1)
-    cv2.circle(frame, right, 5, (255, 0, 0), -1)
+    cv2.circle(frame, right, 5, (0, 255, 255), -1)
+    cv2.circle(frame, left, 5, (255, 0, 0), -1)
 
     # draw observed heading
     LR_x = right[0] - left[0]
@@ -32,11 +33,14 @@ def draw_observed(frame, left, right, location, ball_centre):
 
     cv2.arrowedLine(frame, tuple(location), tuple(Line_end), (255, 255, 255), 2)
 
+    x = tuple(location)[0]
+    y = tuple(location)[1]
+
     if ball_centre is not None:
         cv2.circle(frame, ball_centre, 5, (0, 130, 255), -1)
 
 
-def draw_nao(frame, x, y, heading):
+def draw_nao(frame, x, y, heading, xvar, yvar):
     # draw nao centre
     cv2.circle(frame, (x, y), 5, (255, 0, 255), -1)
 
@@ -46,12 +50,16 @@ def draw_nao(frame, x, y, heading):
     NAO_Line_end_y = int(y + length * math.sin(heading))
 
     cv2.arrowedLine(frame, (x, y), (NAO_Line_end_x, NAO_Line_end_y), (255, 0, 255), 2)
+    cv2.ellipse(frame, (int(x), int(y)), (int(yvar), int(xvar)), float(heading * 180.0/math.pi), 0.0, 360.0, (255, 0, 255), 1)
 
 
 def draw_nao_object(frame, observed_x, observed_y, observed_h, distance, heading, label, colour):
     object_x = int(observed_x + distance * math.cos(observed_h - heading) / 10)
     object_y = int(observed_y + distance * math.sin(observed_h - heading) / 10)
-    cv2.circle(frame, (object_x, object_y), 5, (0, 255, 255), -1)
+    if label is None:
+        cv2.circle(frame, (object_x, object_y), 5, colour, -1)
+
+    cv2.putText(frame, label, (object_x - 5, object_y + 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, colour, 2)
 
 def main():
 
@@ -75,27 +83,58 @@ def main():
 
         values = lines[frame]
 
-        draw_observed(frame=actual_img_resize, left=values['Left_centre'], right=values['Right_centre'], location=values['Location'], \
-                        ball_centre=values.get('Ball_centre'))
+        intradaytime = datetime.datetime.fromtimestamp(int(values['Time']/1000)).strftime('%H:%M:%S')
+        yeartime = datetime.datetime.fromtimestamp(int(values['Time']/1000)).strftime('%d-%m-%Y')
+        readabletime = str(intradaytime) + "." + str(values['Time'])[-3:] + " " + str(yeartime)
+
+        cv2.circle(actual_img_resize, (3, 220), 6, (255, 0, 255), -1)
+        cv2.circle(actual_img_resize, (3, 380), 6, (255, 0, 255), -1)
+
+        if values.get('Location') is not None:
+
+            draw_observed(frame=actual_img_resize, left=values['Left_centre'], right=values['Right_centre'], location=values['Location'], \
+                            ball_centre=values.get('Ball_centre'))
 
         if values.get('Xpos') is not None:
 
-            draw_nao(frame=actual_img_resize, x=values['Xpos'], y=values['Ypos'], heading=values['HeadingNao'])
+            # cv2.ellipse(actual_img_resize, (int(values['Location'][0]), int(values['Location'][1])), (int(values['Yvar']), int(values['Xvar'])), float(values['Heading'] * 180.0/math.pi), 0.0, 360.0, (255, 0, 255), 1)
+
+            draw_nao(frame=actual_img_resize, x=values['Xpos'], y=values['Ypos'], heading=values['HeadingNao'], xvar=values['Xvar'], yvar=values['Yvar'])
 
             # draw nao balls from observed perspective (observed from fixed camera)
             list_of_balls = values['Balls']
             for i, ball in enumerate(list_of_balls):
                 [b_dist, b_heading, b_orient] = [float(val) for val in ball.split(",")]
                 draw_nao_object(frame=actual_img_resize, observed_x=values['Location'][0], observed_y=values['Location'][1], \
-                                observed_h=values['Heading'], distance=b_dist, heading=b_heading, label=i, colour='white')
+                                observed_h=values['Heading'], distance=b_dist, heading=b_heading, label=str(len(list_of_balls) - i), colour=(0, 0, 255))
 
             # draw nao posts from observed perspective (observed from fixed camera)
-            list_of_posts = values['Posts']
+
+            list_of_posts = values['LPost']
+            list_of_posts += values['ALPost']
+            list_of_posts += values['HLPost']
             for i, post in enumerate(list_of_posts):
                 [p_dist, p_heading, p_orient] = [float(val) for val in post.split(",")]
                 draw_nao_object(frame=actual_img_resize, observed_x=values['Location'][0], observed_y=values['Location'][1], \
-                                observed_h=values['Heading'], distance=p_dist, heading=p_heading, label=i, colour='white')
+                                observed_h=values['Heading'], distance=p_dist, heading=p_heading, label="L", colour=(0, 255, 255))
 
+            list_of_posts = values['RPost']
+            list_of_posts += values['ARPost']
+            list_of_posts += values['HRPost']
+            for i, post in enumerate(list_of_posts):
+                [p_dist, p_heading, p_orient] = [float(val) for val in post.split(",")]
+                draw_nao_object(frame=actual_img_resize, observed_x=values['Location'][0], observed_y=values['Location'][1], \
+                                observed_h=values['Heading'], distance=p_dist, heading=p_heading, label="R", colour=(255, 0, 0))
+
+            list_of_posts = values['NPost']
+            list_of_posts += values['APost']
+            list_of_posts += values['HPost']
+            for i, post in enumerate(list_of_posts):
+                [p_dist, p_heading, p_orient] = [float(val) for val in post.split(",")]
+                draw_nao_object(frame=actual_img_resize, observed_x=values['Location'][0], observed_y=values['Location'][1], \
+                                observed_h=values['Heading'], distance=p_dist, heading=p_heading, label="N", colour=(0, 0, 0))
+
+        cv2.putText(actual_img_resize, readabletime, (670, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0))
 
         cv2.imshow('Playback', actual_img_resize)
 

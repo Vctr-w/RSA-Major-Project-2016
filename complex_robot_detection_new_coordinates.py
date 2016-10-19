@@ -138,10 +138,11 @@ def find_ball(img, target_frame, actual_corners, ball_corners, min_radius, colou
         x = int(M["m10"] / M["m00"])
         y = int(M["m01"] / M["m00"])
 
-        cv2.circle(target_frame, (int(circlex), int(circley)), int(circleradius), Colour_dict[colour], 2)
-        cv2.circle(target_frame, (x, y), 5, Colour_dict[colour], -1)
+        cv2.circle(target_frame, (int(circlex) + X_OFFSET, int(circley) + Y_OFFSET), int(circleradius), Colour_dict[colour], 2)
+        cv2.circle(target_frame, (x + X_OFFSET, y + Y_OFFSET), 5, Colour_dict[colour], -1)
 
-        return (x + X_OFFSET, y + Y_OFFSET)
+        #return (x + X_OFFSET, y + Y_OFFSET)
+        return (x, y)
 
 
 def find_left_and_right(img, target_frame, actual_corners, adjusted_corners, min_radius, min_distance, left, right, side):
@@ -183,8 +184,8 @@ def find_left_and_right(img, target_frame, actual_corners, adjusted_corners, min
                 ly = int(lM["m01"] / lM["m00"])
                 lcentre = (lx + X_OFFSET, ly + Y_OFFSET)
                 if (rx - lx)**2 + (ry - ly)**2 < min_distance**2:
-                    cv2.circle(target_frame, (int(xr), int(yr)), int(rradius), Colour_dict[right], 2)
-                    cv2.circle(target_frame, (int(xl), int(yl)), int(lradius), Colour_dict[left], 2)
+                    cv2.circle(target_frame, (int(xr) + X_OFFSET, int(yr) + Y_OFFSET), int(rradius), Colour_dict[right], 2)
+                    cv2.circle(target_frame, (int(xl) + X_OFFSET, int(yl) + Y_OFFSET), int(lradius), Colour_dict[left], 2)
                     cv2.circle(target_frame, rcentre, 5, Colour_dict[right], -1)
                     cv2.circle(target_frame, lcentre, 5, Colour_dict[left], -1)
                     return (rcentre, lcentre)
@@ -217,8 +218,8 @@ def find_left_and_right(img, target_frame, actual_corners, adjusted_corners, min
                 sy = int(sM["m01"] / sM["m00"])
                 scentre = (sx, sy)
                 if (x - sx)**2 + (y - sy)**2 < min_distance**2:
-                    cv2.circle(target_frame, (int(circlex), int(circley)), int(circleradius), Colour_dict[colour], 2)
-                    cv2.circle(target_frame, (x, y), 5, Colour_dict[colour], -1)
+                    cv2.circle(target_frame, (int(circlex) + X_OFFSET, int(circley) + Y_OFFSET), int(circleradius), Colour_dict[colour], 2)
+                    cv2.circle(target_frame, (x + X_OFFSET, y + Y_OFFSET), 5, Colour_dict[colour], -1)
 
                     return ((x + 5 + X_OFFSET, y + 5 + Y_OFFSET), (x + X_OFFSET, y + Y_OFFSET))
 
@@ -250,11 +251,11 @@ def find_left_and_right(img, target_frame, actual_corners, adjusted_corners, min
                 sy = int(sM["m01"] / sM["m00"])
                 scentre = (sx, sy)
                 if (x - sx)**2 + (y - sy)**2 < min_distance**2:
-                    cv2.circle(target_frame, (int(circlex), int(circley)), int(circleradius), Colour_dict[colour], 2)
-                    cv2.circle(target_frame, (x, y), 5, Colour_dict[colour], -1)
+                    cv2.circle(target_frame, (int(circlex) + X_OFFSET, int(circley) + Y_OFFSET), int(circleradius), Colour_dict[colour], 2)
+                    cv2.circle(target_frame, (x + X_OFFSET, y + Y_OFFSET), 5, Colour_dict[colour], -1)
 
-                    return ((x + X_OFFSET, y + Y_OFFSET), (x + 5 + X_OFFSET, y + 5 + Y_OFFSET))
-
+                    #return ((x + X_OFFSET, y + Y_OFFSET), (x + 5 + X_OFFSET, y + 5 + Y_OFFSET))
+                    return ((x, y), (x + 5, y + 5))
 
 
 def main():
