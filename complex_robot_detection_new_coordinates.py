@@ -64,8 +64,8 @@ def shoulder_height_adj(corners):
 	return corners
 
 def detect_blob(frame, colour):
-	HSVLower_dict = {'blue': (92, 155, 150), 'red': (0,150,150), 'yellow': (26, 40, 200), 'orange': (0, 170, 130)}
-	HSVUpper_dict = {'blue': (124, 255, 255), 'red': (4,255,255), 'yellow': (31, 255, 255), 'orange': (25, 255, 255)}
+	HSVLower_dict = {'blue': (92, 155, 150), 'red': (0,150,150), 'yellow': (26, 40, 200), 'orange': (0, 170, 130), 'purple': (116, 30, 100)}
+	HSVUpper_dict = {'blue': (124, 255, 255), 'red': (4,255,255), 'yellow': (31, 255, 255), 'orange': (25, 255, 255), 'purple': (136, 255, 255)}
 	HSVLower = HSVLower_dict[colour]
 	HSVUpper = HSVUpper_dict[colour]
 
@@ -107,7 +107,7 @@ def detect_blob(frame, colour):
 
 
 def find_ball(img, target_frame, actual_corners, ball_corners, min_radius, colour):
-    Colour_dict = {'blue': (255, 0, 0), 'red': (0, 0, 255), 'yellow': (0, 255, 255), 'orange': (0, 130, 255)}
+    Colour_dict = {'blue': (255, 0, 0), 'red': (0, 0, 255), 'yellow': (0, 255, 255), 'orange': (0, 130, 255), 'purple': (224, 70, 113)}
 
     pts1 = np.float32(ball_corners)
 
@@ -146,7 +146,7 @@ def find_ball(img, target_frame, actual_corners, ball_corners, min_radius, colou
 
 
 def find_left_and_right(img, target_frame, actual_corners, adjusted_corners, min_radius, min_distance, left, right, side):
-    Colour_dict = {'blue': (255, 0, 0), 'red': (0, 0, 255), 'yellow': (0, 255, 255), 'orange': (0, 130, 255)}
+    Colour_dict = {'blue': (255, 0, 0), 'red': (0, 0, 255), 'yellow': (0, 255, 255), 'orange': (0, 130, 255), 'purple': (224, 70, 113)}
 
     pts1 = np.float32(adjusted_corners)
 
@@ -188,74 +188,121 @@ def find_left_and_right(img, target_frame, actual_corners, adjusted_corners, min
                     cv2.circle(target_frame, (int(xl) + X_OFFSET, int(yl) + Y_OFFSET), int(lradius), Colour_dict[left], 2)
                     cv2.circle(target_frame, rcentre, 5, Colour_dict[right], -1)
                     cv2.circle(target_frame, lcentre, 5, Colour_dict[left], -1)
-                    return (rcentre, lcentre)
+                    return ((rx, ry), (lx, ly))
 
-    if rightcnts is None and leftcnts is not None:
         sidecnts = detect_blob(frame, side)
-        if sidecnts is None:
-            return None
-
-        maxbc = None
-        maxradius = 0
-        for bc in leftcnts:
-            ((circlex, circley), circleradius) = cv2.minEnclosingCircle(bc)
-            if circleradius > maxradius:
-                maxbc = bc
-                maxradius = circleradius
-
-        if maxbc is not None:
-            ((circlex, circley), circleradius) = cv2.minEnclosingCircle(maxbc)
-            M = cv2.moments(maxbc)
-            x = int(M["m10"] / M["m00"])
-            y = int(M["m01"] / M["m00"])
-
-            for sc in sidecnts:
-                ((xl, yl), sradius) = cv2.minEnclosingCircle(sc)
-                if (sradius < min_radius):
+        if sidecnts is not None:
+            for rc in rightcnts:
+                ((xr, yr), rradius) = cv2.minEnclosingCircle(rc)
+                if (rradius < min_radius):
                     continue
-                sM = cv2.moments(sc)
-                sx = int(sM["m10"] / sM["m00"])
-                sy = int(sM["m01"] / sM["m00"])
-                scentre = (sx, sy)
-                if (x - sx)**2 + (y - sy)**2 < min_distance**2:
-                    cv2.circle(target_frame, (int(circlex) + X_OFFSET, int(circley) + Y_OFFSET), int(circleradius), Colour_dict[colour], 2)
-                    cv2.circle(target_frame, (x + X_OFFSET, y + Y_OFFSET), 5, Colour_dict[colour], -1)
+                rM = cv2.moments(rc)
+                rx = int(rM["m10"] / rM["m00"])
+                ry = int(rM["m01"] / rM["m00"])
+                rcentre = (rx + X_OFFSET, ry + Y_OFFSET)
+                for sc in sidecnts:
+                    ((xs, ys), sradius) = cv2.minEnclosingCircle(sc)
+                    if (sradius < min_radius):
+                        continue
+                    sM = cv2.moments(sc)
+                    sx = int(sM["m10"] / sM["m00"])
+                    sy = int(sM["m01"] / sM["m00"])
+                    scentre = (sx + X_OFFSET, sy + Y_OFFSET)
+                    if (rx - sx)**2 + (ry - sy)**2 < min_distance**2:
+                        cv2.circle(target_frame, (int(xr) + X_OFFSET, int(yr) + Y_OFFSET), int(rradius), Colour_dict[right], 2)
+                        cv2.circle(target_frame, (int(xr) + X_OFFSET - 20, int(yr) + Y_OFFSET), int(sradius), Colour_dict[left], 2)
+                        cv2.circle(target_frame, rcentre, 5, Colour_dict[right], -1)
+                        cv2.circle(target_frame, (rx + X_OFFSET -20, ry + Y_OFFSET), 5, Colour_dict[left], -1)
+                        return ((rx, ry), (rx - 20, ry - 1))
 
-                    return ((x + 5 + X_OFFSET, y + 5 + Y_OFFSET), (x + X_OFFSET, y + Y_OFFSET))
-
-    if rightcnts is not None and leftcnts is None:
-        sidecnts = detect_blob(frame, side)
-        if sidecnts is None:
-            return None
-
-        maxbc = None
-        maxradius = 0
-        for bc in rightcnts:
-            ((circlex, circley), circleradius) = cv2.minEnclosingCircle(bc)
-            if circleradius > maxradius:
-                maxbc = bc
-                maxradius = circleradius
-
-        if maxbc is not None:
-            ((circlex, circley), circleradius) = cv2.minEnclosingCircle(maxbc)
-            M = cv2.moments(maxbc)
-            x = int(M["m10"] / M["m00"])
-            y = int(M["m01"] / M["m00"])
-
-            for sc in sidecnts:
-                ((xl, yl), sradius) = cv2.minEnclosingCircle(sc)
-                if (sradius < min_radius):
+            for lc in leftcnts:
+                ((xl, yl), lradius) = cv2.minEnclosingCircle(lc)
+                if (lradius < min_radius):
                     continue
-                sM = cv2.moments(sc)
-                sx = int(sM["m10"] / sM["m00"])
-                sy = int(sM["m01"] / sM["m00"])
-                scentre = (sx, sy)
-                if (x - sx)**2 + (y - sy)**2 < min_distance**2:
-                    cv2.circle(target_frame, (int(circlex) + X_OFFSET, int(circley) + Y_OFFSET), int(circleradius), Colour_dict[colour], 2)
-                    cv2.circle(target_frame, (x + X_OFFSET, y + Y_OFFSET), 5, Colour_dict[colour], -1)
+                lM = cv2.moments(lc)
+                lx = int(lM["m10"] / lM["m00"])
+                ly = int(lM["m01"] / lM["m00"])
+                lcentre = (lx + X_OFFSET, ly + Y_OFFSET)
+                for sc in sidecnts:
+                    ((xs, ys), sradius) = cv2.minEnclosingCircle(sc)
+                    if (sradius < min_radius):
+                        continue
+                    sM = cv2.moments(sc)
+                    sx = int(sM["m10"] / sM["m00"])
+                    sy = int(sM["m01"] / sM["m00"])
+                    scentre = (sx + X_OFFSET, sy + Y_OFFSET)
+                    if (lx - sx)**2 + (ly - sy)**2 < min_distance**2:
+                        cv2.circle(target_frame, (int(xl) + X_OFFSET - 20, int(yl) + Y_OFFSET), int(lradius), Colour_dict[right], 2)
+                        cv2.circle(target_frame, (int(xl) + X_OFFSET, int(yl) + Y_OFFSET), int(sradius), Colour_dict[left], 2)
+                        cv2.circle(target_frame, (lx + X_OFFSET - 20, ly + Y_OFFSET), 5, Colour_dict[right], -1)
+                        cv2.circle(target_frame, lcentre, 5, Colour_dict[left], -1)
+                        return ((lx -20, ly -1), (lx, ly))
 
-                    #return ((x + X_OFFSET, y + Y_OFFSET), (x + 5 + X_OFFSET, y + 5 + Y_OFFSET))
-                    return ((x, y), (x + 5, y + 5))
+    # if rightcnts is None and leftcnts is not None:
+    #     sidecnts = detect_blob(frame, side)
+    #     if sidecnts is None:
+    #         return None
+    #     print ("i found purple")
+    #     maxbc = None
+    #     maxradius = 0
+    #     for bc in leftcnts:
+    #         ((circlex, circley), circleradius) = cv2.minEnclosingCircle(bc)
+    #         if circleradius > maxradius:
+    #             maxbc = bc
+    #             maxradius = circleradius
+    #
+    #     if maxbc is not None:
+    #         ((circlex, circley), circleradius) = cv2.minEnclosingCircle(maxbc)
+    #         M = cv2.moments(maxbc)
+    #         x = int(M["m10"] / M["m00"])
+    #         y = int(M["m01"] / M["m00"])
+    #
+    #         for sc in sidecnts:
+    #             ((xl, yl), sradius) = cv2.minEnclosingCircle(sc)
+    #             if (sradius < min_radius):
+    #                 continue
+    #             sM = cv2.moments(sc)
+    #             sx = int(sM["m10"] / sM["m00"])
+    #             sy = int(sM["m01"] / sM["m00"])
+    #             scentre = (sx, sy)
+    #             if (x - sx)**2 + (y - sy)**2 < min_distance**2:
+    #                 cv2.circle(target_frame, (int(circlex) + X_OFFSET, int(circley) + Y_OFFSET), int(circleradius), Colour_dict[colour], 2)
+    #                 cv2.circle(target_frame, (x + X_OFFSET, y + Y_OFFSET), 5, Colour_dict[colour], -1)
+    #
+    #                 return ((x + 5 + X_OFFSET, y + 5 + Y_OFFSET), (x + X_OFFSET, y + Y_OFFSET))
+    #
+    # if rightcnts is not None and leftcnts is None:
+    #     sidecnts = detect_blob(frame, side)
+    #     if sidecnts is None:
+    #         return None
+    #     maxbc = None
+    #     maxradius = 0
+    #     for bc in rightcnts:
+    #         ((circlex, circley), circleradius) = cv2.minEnclosingCircle(bc)
+    #         if circleradius > maxradius:
+    #             maxbc = bc
+    #             maxradius = circleradius
+    #
+    #     if maxbc is not None:
+    #         ((circlex, circley), circleradius) = cv2.minEnclosingCircle(maxbc)
+    #         M = cv2.moments(maxbc)
+    #         x = int(M["m10"] / M["m00"])
+    #         y = int(M["m01"] / M["m00"])
+    #
+    #         for sc in sidecnts:
+    #             ((xl, yl), sradius) = cv2.minEnclosingCircle(sc)
+    #             if (sradius < min_radius):
+    #                 continue
+    #             sM = cv2.moments(sc)
+    #             sx = int(sM["m10"] / sM["m00"])
+    #             sy = int(sM["m01"] / sM["m00"])
+    #             scentre = (sx, sy)
+    #             if (x - sx)**2 + (y - sy)**2 < min_distance**2:
+    #                 cv2.circle(target_frame, (int(circlex) + X_OFFSET, int(circley) + Y_OFFSET), int(circleradius), Colour_dict[colour], 2)
+    #                 cv2.circle(target_frame, (x + X_OFFSET, y + Y_OFFSET), 5, Colour_dict[colour], -1)
+    #
+    #                 #return ((x + X_OFFSET, y + Y_OFFSET), (x + 5 + X_OFFSET, y + 5 + Y_OFFSET))
+    #                 return ((x, y), (x + 5, y + 5))
 
 
 def main():
@@ -322,7 +369,7 @@ def main():
         #Blue on right shoulder
         #yellow on left shoulder
         result = find_left_and_right(img, actual_img_resize, actual_corners, adjusted_corners, min_radius=0, min_distance=50, \
-        left='yellow', right='blue', side='red')
+        left='yellow', right='blue', side='purple')
         if result is not None:
             (left_centre, right_centre) = result
         # right_centre = detect_blob(dst_persp_rot, actual_img_resize, 'right')
@@ -331,7 +378,7 @@ def main():
         # left_centre = detect_blob(dst_persp_rot, dst_persp_rot, 'left')
 
             try:
-                Location = [(right_centre[0] + left_centre[0]) / 2, (right_centre[1] + left_centre[1]) / 2]
+                Location = [(right_centre[0] + left_centre[0]) / 2 + X_OFFSET, (right_centre[1] + left_centre[1]) / 2 + Y_OFFSET]
                 LR_x = right_centre[0] - left_centre[0]
                 LR_y = right_centre[1] - left_centre[1]
 
