@@ -5,9 +5,11 @@ import math
 
 def nothing(*arg):
         pass
-        
+
 #fn = '/home/vctr/Downloads/Sudoku.jpg'
-fn = '/home/vctr/Downloads/field_image.resized.jpg'
+#fn = '/home/vctr/Downloads/field_image.resized.jpg'
+fn = '/home/rsa/RSA-Major-Project-2016/calibrationphoto.jpg'
+
 src = cv2.imread(fn)
 gray = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY)
 
@@ -32,4 +34,3 @@ while True:
     ch = cv2.waitKey(5) & 0xFF
     if ch == 27:
         breaks
-        

@@ -35,7 +35,7 @@ def process_line(line, time_difference):
 if __name__ == "__main__":
     #freya time is 79500ms ahead
     #yoda time is 10850ms behind
-    nao_lines = [process_line(line.rstrip('\n'), 80154 - 1000) for line in open('nao_log.txt')]
+    nao_lines = [process_line(line.rstrip('\n'), 79500) for line in open('nao_log.txt')]
     # for line in nao_lines:
     #     print line
     pickled_log_file = open('log_file.txt')

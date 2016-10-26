@@ -93,8 +93,8 @@ def main():
         yeartime = datetime.datetime.fromtimestamp(int(values['Time']/1000)).strftime('%d-%m-%Y')
         readabletime = str(intradaytime) + "." + str(values['Time'])[-3:] + " " + str(yeartime)
 
-        # cv2.circle(actual_img_resize, (3 + X_OFFSET, 220 + Y_OFFSET), 6, (255, 0, 255), -1)
-        # cv2.circle(actual_img_resize, (3 + X_OFFSET, 380 + Y_OFFSET), 6, (255, 0, 255), -1)
+        cv2.circle(actual_img_resize, (3 + X_OFFSET, 220 + Y_OFFSET), 6, (255, 0, 255), -1)
+        cv2.circle(actual_img_resize, (3 + X_OFFSET, 380 + Y_OFFSET), 6, (255, 0, 255), -1)
 
         if values.get('Location') is not None:
 

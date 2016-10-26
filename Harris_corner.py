@@ -6,7 +6,8 @@ import math
 def nothing(*arg):
         pass
 
-filename = '/home/vctr/Downloads/field_image.resized.jpg'
+# filename = '/home/vctr/Downloads/field_image.resized.jpg'
+filename = '/home/rsa/RSA-Major-Project-2016/calibrationphoto.jpg'
 
 
 cv2.namedWindow('test')
@@ -32,7 +33,7 @@ while True:
     ch = cv2.waitKey(5) & 0xFF
     if ch == 27:
         breaks
-        
+
 '''
 fn = '/home/vctr/Downloads/field_image.resized.jpg'
 src = cv2.imread(fn)

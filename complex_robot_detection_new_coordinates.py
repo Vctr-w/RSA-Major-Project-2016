@@ -8,7 +8,7 @@ import os
 #from matplotlib import pyplot as plt
 
 BALL_HEIGHT = 60.0 / 10
-SHOULDER_HEIGHT = 439.0 / 10
+SHOULDER_HEIGHT = 350.0 / 10
 FIELD_WIDTH = 6000 / 10
 FIELD_LENGTH = 9000 / 10
 
@@ -30,8 +30,8 @@ def nothing(*arg):
         pass
 
 def ball_height_adj(bcorners):
-    far_width = (bcorners[0][0] + bcorners[1][0]) / 2
-    near_width = (bcorners[2][0] + bcorners[3][0]) / 2
+    far_width = float(bcorners[0][0] + bcorners[1][0]) / 2
+    near_width = float(bcorners[2][0] + bcorners[3][0]) / 2
 
     ratio = 1.0 * BALL_HEIGHT / FIELD_WIDTH
 
@@ -47,8 +47,8 @@ def ball_height_adj(bcorners):
     return bcorners
 
 def shoulder_height_adj(corners):
-	far_width = (corners[0][0] + corners[1][0]) / 2
-	near_width = (corners[2][0] + corners[3][0]) / 2
+	far_width = float(corners[0][0] + corners[1][0]) / 2
+	near_width = float(corners[2][0] + corners[3][0]) / 2
 
 	ratio = 1.0 * SHOULDER_HEIGHT / FIELD_WIDTH
 
@@ -322,7 +322,7 @@ def main():
 
     # cap = cv2.VideoCapture(0)
     # cap = cv2.VideoCapture('http://10.0.18.6:8080/videofeed?dummy=param.mjpg')
-    cap = cv2.VideoCapture('http://129.94.233.98/live?dummy=param.mjpg')
+    cap = cv2.VideoCapture('http://129.94.233.45/live?dummy=param.mjpg')
     # img = cv2.imread('/Users/Martin/Github/RSA-Major-Project-2016/field_image_colour_cal_2.JPG')
 
     corners_file = file('corners.txt', 'r')
@@ -403,8 +403,10 @@ def main():
 
                 cv2.arrowedLine(actual_img_resize, tuple(Location), tuple(Line_end), (255, 255, 255), 2)
 
-                print "Location: " + str(Location)
+                print "Location: " + str(Location[0] - X_OFFSET) + " " + str(Location[1] - Y_OFFSET)
                 print "Heading: " + str(Heading)
+
+                # print "Ball Location: " + str(ball_centre)
 
                 write_dict = {'Time': time.time() * 1000.0, 'Location': Location, 'Heading': Heading, \
                     'Left_centre': left_centre, 'Right_centre': right_centre, "Ball_centre": ball_centre}
